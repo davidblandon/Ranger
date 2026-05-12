@@ -1,0 +1,15 @@
+# Example Docker Compose file
+version: '3.8'
+services:
+  rh-service:
+    build: ../services/rh-service
+    ports:
+      - "8081:8080"
+  production-service:
+    build: ../services/production-service
+    ports:
+      - "8082:8080"
+  frontend:
+    build: ../frontend
+    ports:
+      - "3000:3000"
