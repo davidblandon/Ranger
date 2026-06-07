@@ -110,6 +110,106 @@ export interface DashboardResponse {
   outOfStockProducts: number;
 }
 
+// ─────────────────────────────────────────────
+// RH Service DTOs
+// ─────────────────────────────────────────────
+
+// — RH Auth —
+export interface RhAuthRequest { username: string; password: string; }
+export interface RhAuthResponse { id: number; username: string; role: "ADMIN" | "EMPLOYEE"; }
+
+// — Employee —
+export interface EmployeeRequest {
+  name: string;
+  username: string;
+  password: string;
+  telephone: string;
+  address: string;
+  bankAccount: string;
+  monthlyHours: number;
+  salary: number;
+  shiftId?: number | null;
+}
+export interface EmployeeResponse {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+  telephone: string;
+  address: string;
+  bankAccount: string;
+  monthlyHours: number;
+  salary: number;
+  shiftId: number | null;
+  payrollIds: number[];
+}
+
+// — Payroll —
+export interface PayrollRequest {
+  month: string;
+  year: string;
+  paid: boolean;
+  amount: number;
+  employeeId: number;
+}
+export interface PayrollGenerateRequest {
+  employeeId: number;
+  month: string;
+  year: string;
+}
+export interface PayrollResponse {
+  id: number;
+  month: string;
+  year: string;
+  paid: boolean;
+  amount: number;
+  employeeId: number;
+}
+
+// — Shift / TimeBlock —
+export interface TimeBlockRequest { start: string; end: string; }
+export interface TimeBlockResponse { start: string; end: string; }
+export interface ShiftRequest {
+  monday?: TimeBlockRequest[];
+  tuesday?: TimeBlockRequest[];
+  wednesday?: TimeBlockRequest[];
+  thursday?: TimeBlockRequest[];
+  friday?: TimeBlockRequest[];
+  saturday?: TimeBlockRequest[];
+  sunday?: TimeBlockRequest[];
+}
+export interface ShiftResponse {
+  id: number;
+  monday: TimeBlockResponse[];
+  tuesday: TimeBlockResponse[];
+  wednesday: TimeBlockResponse[];
+  thursday: TimeBlockResponse[];
+  friday: TimeBlockResponse[];
+  saturday: TimeBlockResponse[];
+  sunday: TimeBlockResponse[];
+}
+
+// — Admin —
+export interface AdminRequest {
+  name: string;
+  username: string;
+  password: string;
+  telephone: string;
+  address: string;
+  bankAccount: string;
+  permissions: string;
+}
+export interface AdminResponse {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+  telephone: string;
+  address: string;
+  bankAccount: string;
+  permissions: string;
+}
+
 // — Error envelope (GlobalExceptionHandler.ApiError) —
 export interface ApiError {
   timestamp: string;

@@ -14,7 +14,7 @@ services:
   rh-service:
     build: ../services/rh-service
     ports:
-      - "8081:8080"
+      - "8081:8082"
   production-service:
     build: ../services/production-service
     ports:

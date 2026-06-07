@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,11 +41,13 @@ public class ShiftController {
         this.currentUserService = currentUserService;
     }
 
+    @Transactional(readOnly = true)
     @GetMapping
     public List<ShiftResponse> findAll(Authentication authentication) {
         return currentUserService.filterShifts(authentication, shiftService.findAll()).stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/{id}")
     public ShiftResponse findById(@PathVariable Long id, Authentication authentication) {
         Shift shift = loadShift(id);
@@ -52,6 +55,7 @@ public class ShiftController {
         return toResponse(shift);
     }
 
+    @Transactional
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ShiftResponse create(@Valid @RequestBody ShiftRequest request) {
@@ -60,6 +64,7 @@ public class ShiftController {
         return toResponse(shiftService.save(shift));
     }
 
+    @Transactional
     @PutMapping("/{id}")
     public ShiftResponse update(@PathVariable Long id, @Valid @RequestBody ShiftRequest request) {
         Shift shift = loadShift(id);

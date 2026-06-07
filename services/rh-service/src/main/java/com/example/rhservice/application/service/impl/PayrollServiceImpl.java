@@ -10,6 +10,7 @@ import com.example.rhservice.domain.model.Shift;
 import com.example.rhservice.domain.model.TimeBlock;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
@@ -30,6 +31,7 @@ public class PayrollServiceImpl extends AbstractCrudService<Payroll, Long> imple
     }
 
     @Override
+    @Transactional
     public Payroll generateMonthlyPayroll(Long employeeId, String month, String year) {
         Employee employee = employeePersistencePort.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
@@ -45,6 +47,7 @@ public class PayrollServiceImpl extends AbstractCrudService<Payroll, Long> imple
     }
 
     @Override
+    @Transactional(readOnly = true)
     public byte[] generatePayrollPaystub(Long payrollId) {
         Payroll payroll = findById(payrollId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payroll not found"));

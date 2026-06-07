@@ -72,6 +72,10 @@
 .badge--cancelled { background: var(--clay-tint); color: var(--clay); }
 .badge--cancelled .badge__dot { background: var(--clay); }
 
+/* — HR payroll status badges — */
+.badge--paid   { background: var(--pine-tint); color: var(--pine); }
+.badge--unpaid { background: var(--ochre-tint); color: var(--ochre); }
+
 /* — Form fields — */
 .field { display: flex; flex-direction: column; gap: var(--sp-2); }
 .field__label {

@@ -21,6 +21,11 @@
   --pine: #1f6f54;           /* positive money (revenue)    */
   --pine-tint: #e2efe9;
 
+  /* — HR service accent — */
+  --teal: #2a5f78;           /* HR domain accent (deep atlantic) */
+  --teal-press: #1e4d63;
+  --teal-tint: #e0edf3;
+
   /* — State palette (order states & feedback) — */
   --ochre: #9a7416;          --ochre-tint: #f3ecd7;
   --slate: #3a5a8c;          --slate-tint: #e4e9f2;
@@ -54,7 +59,14 @@
   --sidebar-w: 244px;
   --content-max: 1280px;
 
-  /* — Motion — */
+  /* — HR scope: override accent tokens so all shared UI uses teal — */
+.hr-scope {
+  --ember: var(--teal);
+  --ember-press: var(--teal-press);
+  --ember-tint: var(--teal-tint);
+}
+
+/* — Motion — */
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --dur: 180ms;
 }

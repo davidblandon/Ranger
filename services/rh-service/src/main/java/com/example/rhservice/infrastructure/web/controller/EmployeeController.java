@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,18 +46,21 @@ public class EmployeeController {
         this.currentUserService = currentUserService;
     }
 
+    @Transactional(readOnly = true)
     @GetMapping
     public List<EmployeeResponse> findAll(Authentication authentication) {
         currentUserService.requireAdmin(authentication);
         return employeeService.findAll().stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/{id}")
     public EmployeeResponse findById(@PathVariable Long id, Authentication authentication) {
         currentUserService.requireSelfOrAdmin(authentication, id);
         return toResponse(loadEmployee(id));
     }
 
+    @Transactional
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EmployeeResponse create(@Valid @RequestBody EmployeeRequest request, Authentication authentication) {
@@ -66,6 +70,7 @@ public class EmployeeController {
         return toResponse(employeeService.save(employee));
     }
 
+    @Transactional
     @PutMapping("/{id}")
     public EmployeeResponse update(@PathVariable Long id, @Valid @RequestBody EmployeeRequest request, Authentication authentication) {
         currentUserService.requireAdmin(authentication);
