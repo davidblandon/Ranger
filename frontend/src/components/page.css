@@ -1,0 +1,133 @@
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  animation: fade-up var(--dur) var(--ease) both;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+.page-head__title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--text-2xl);
+  margin-top: var(--sp-1);
+}
+.page-head__count {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--ink-3);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px var(--sp-3);
+}
+.page-head__actions { display: flex; gap: var(--sp-3); }
+
+/* Confirm dialog */
+.confirm__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(28, 27, 23, 0.4);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+  animation: fade-in var(--dur) var(--ease);
+}
+.confirm {
+  width: min(400px, 100%);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--sp-5);
+  animation: fade-up var(--dur) var(--ease);
+}
+.confirm__title { font-size: var(--text-lg); margin-bottom: var(--sp-2); }
+.confirm__msg { font-size: var(--text-sm); color: var(--ink-2); margin-bottom: var(--sp-5); }
+.confirm__actions { display: flex; justify-content: flex-end; gap: var(--sp-3); }
+
+/* Dashboard layout helpers */
+.grid-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--sp-5);
+}
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+}
+.panel__title { font-size: var(--text-lg); }
+.two-col {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--sp-4);
+}
+@media (max-width: 880px) {
+  .two-col { grid-template-columns: 1fr; }
+  .page-head { flex-direction: column; align-items: flex-start; }
+}
+
+/* Orders-by-state bars */
+.statebar { display: flex; flex-direction: column; gap: var(--sp-2); }
+.statebar__row { display: grid; grid-template-columns: 110px 1fr 32px; align-items: center; gap: var(--sp-3); }
+.statebar__track { height: 5px; background: var(--paper-2); border-radius: 999px; overflow: hidden; }
+.statebar__fill { height: 100%; border-radius: 999px; transition: width 400ms var(--ease); }
+.statebar__num { font-family: var(--font-mono); font-feature-settings: "tnum" 1; text-align: right; color: var(--ink-2); font-size: var(--text-sm); }
+
+/* Compact dashboard lower section */
+.dash-lower {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  padding: 0;
+  overflow: hidden;
+}
+.dash-lower__orders  { padding: var(--sp-4) var(--sp-5); }
+.dash-lower__divider { width: 1px; background: var(--line); }
+.dash-lower__inventory { padding: var(--sp-4) var(--sp-5); }
+.dash-lower__heading {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.dash-lower__sub { font-weight: 400; letter-spacing: 0; text-transform: none; font-size: var(--text-xs); }
+
+/* Inventory tally */
+.tally { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--sp-4); }
+.tally__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--line);
+  gap: var(--sp-3);
+}
+.tally__label { font-size: var(--text-sm); color: var(--ink-2); }
+.tally__value { font-family: var(--font-mono); font-size: var(--text-md); font-weight: 600; color: var(--ink); }
+
+/* form layout */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+@media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
