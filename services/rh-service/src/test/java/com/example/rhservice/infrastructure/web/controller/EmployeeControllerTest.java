@@ -1,121 +1,108 @@
 package com.example.rhservice.infrastructure.web.controller;
 
-import com.example.rhservice.application.port.in.EmployeeService;
-import com.example.rhservice.application.port.in.ShiftService;
-import com.example.rhservice.domain.model.Employee;
-import com.example.rhservice.domain.model.Shift;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@WebMvcTest(EmployeeController.class)
-class EmployeeControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private EmployeeService employeeService;
-
-    @MockBean
-    private ShiftService shiftService;
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+class EmployeeControllerTest extends AbstractApiIntegrationTest {
 
     @Test
-    void shouldListEmployees() throws Exception {
-        Employee employee = buildEmployee(1L, 10L);
-        when(employeeService.findAll()).thenReturn(List.of(employee));
-
-        mockMvc.perform(get("/api/employees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].shiftId").value(10L));
+    void adminCanListEmployees() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/employees").session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.length()")
+                        .value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
     }
 
     @Test
-    void shouldCreateEmployee() throws Exception {
-        Shift shift = buildShift(10L);
-        when(shiftService.findById(10L)).thenReturn(java.util.Optional.of(shift));
-        when(employeeService.save(any(Employee.class))).thenAnswer(invocation -> {
-            Employee employee = invocation.getArgument(0);
-            employee.setId(2L);
-            return employee;
-        });
-
-        mockMvc.perform(post("/api/employees")
+    void adminCanCreateEmployee() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/employees")
+                        .session(adminSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Ana","telephone":"555","address":"Street","bankAccount":"IBAN","monthlyHours":160,"salary":2500,"shiftId":10}
-                                """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(2L))
-                .andExpect(jsonPath("$.shiftId").value(10L));
+                                {"name":"Ana","username":"ana","password":"secret","telephone":"555","address":"Street","bankAccount":"IBAN","monthlyHours":160,"salary":2500,"shiftId":%d}
+                                """.formatted(employeeShiftId)))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.username").value("ana"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.shiftId").value(employeeShiftId.intValue()));
     }
 
     @Test
-    void shouldGetEmployeeById() throws Exception {
-        when(employeeService.findById(1L)).thenReturn(java.util.Optional.of(buildEmployee(1L, 10L)));
-
-        mockMvc.perform(get("/api/employees/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Ana"));
+    void adminCanGetEmployeeById() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/employees/{id}", otherEmployeeId).session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.username").value("employee2"));
     }
 
     @Test
-    void shouldUpdateEmployee() throws Exception {
-        Shift shift = buildShift(10L);
-        when(employeeService.findById(1L)).thenReturn(java.util.Optional.of(buildEmployee(1L, 10L)));
-        when(shiftService.findById(10L)).thenReturn(java.util.Optional.of(shift));
-        when(employeeService.save(any(Employee.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        mockMvc.perform(put("/api/employees/1")
+    void adminCanUpdateEmployee() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/employees/{id}", otherEmployeeId)
+                        .session(adminSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Ana 2","telephone":"555","address":"Street","bankAccount":"IBAN","monthlyHours":180,"salary":2600,"shiftId":10}
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Ana 2"))
-                .andExpect(jsonPath("$.monthlyHours").value(180.0));
+                                {"name":"Employee Two Updated","username":"employee2","password":"secret","telephone":"555","address":"Street 2","bankAccount":"IBAN2","monthlyHours":180,"salary":2600,"shiftId":%d}
+                                """.formatted(otherShiftId)))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Employee Two Updated"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.shiftId").value(otherShiftId.intValue()));
     }
 
     @Test
-    void shouldDeleteEmployee() throws Exception {
-        mockMvc.perform(delete("/api/employees/1"))
-                .andExpect(status().isNoContent());
-
-        verify(employeeService).delete(1L);
+    void adminCanDeleteEmployee() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/employees/{id}", otherEmployeeId).session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
-    private Employee buildEmployee(Long id, Long shiftId) {
-        Employee employee = new Employee();
-        employee.setId(id);
-        employee.setName("Ana");
-        employee.setTelephone("555");
-        employee.setAddress("Street");
-        employee.setBankAccount("IBAN");
-        employee.setMonthlyHours(160.0);
-        employee.setSalary(2500.0);
-        employee.setShift(buildShift(shiftId));
-        return employee;
+    @Test
+    void employeeCanReadOwnProfile() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/employees/{id}", employeeId).session(employeeSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.username").value("employee1"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.role").value("EMPLOYEE"));
     }
 
-    private Shift buildShift(Long id) {
-        Shift shift = new Shift();
-        shift.setId(id);
-        return shift;
+    @Test
+    void employeeCannotReadAnotherProfile() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/employees/{id}", otherEmployeeId).session(employeeSession))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
+    }
+
+    @Test
+    void employeeCannotUpdateOwnProfile() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/employees/{id}", employeeId)
+                        .session(employeeSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Employee One","username":"employee1","password":"newpass","telephone":"555","address":"Street","bankAccount":"IBAN","monthlyHours":160,"salary":2500,"shiftId":%d}
+                                """.formatted(employeeShiftId)))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
+    }
+
+    @Test
+    void employeeCannotDeleteOwnProfile() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/employees/{id}", employeeId).session(employeeSession))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
+    }
+
+    @Test
+    void employeeCannotManageEmployees() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/employees")
+                        .session(employeeSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Ana","username":"ana","password":"secret","telephone":"555","address":"Street","bankAccount":"IBAN","monthlyHours":160,"salary":2500,"shiftId":%d}
+                                """.formatted(employeeShiftId)))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
     }
 }

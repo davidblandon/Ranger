@@ -6,6 +6,8 @@ import java.util.List;
 public record EmployeeResponse(
         Long id,
         String name,
+        String username,
+        String role,
         String telephone,
         String address,
         String bankAccount,

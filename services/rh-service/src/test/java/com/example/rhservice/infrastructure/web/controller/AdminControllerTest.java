@@ -1,104 +1,70 @@
 package com.example.rhservice.infrastructure.web.controller;
 
-import com.example.rhservice.application.port.in.AdminService;
-import com.example.rhservice.domain.model.Admin;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@WebMvcTest(AdminController.class)
-class AdminControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private AdminService adminService;
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+class AdminControllerTest extends AbstractApiIntegrationTest {
 
     @Test
-    void shouldListAdmins() throws Exception {
-        Admin admin = buildAdmin(1L);
-        when(adminService.findAll()).thenReturn(List.of(admin));
-
-        mockMvc.perform(get("/api/admins"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].permissions").value("ROLE_HR"));
+    void adminCanListAdmins() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/admins").session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.length()")
+                        .value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
     }
 
     @Test
-    void shouldCreateAdmin() throws Exception {
-        when(adminService.save(any(Admin.class))).thenAnswer(invocation -> {
-            Admin admin = invocation.getArgument(0);
-            admin.setId(2L);
-            return admin;
-        });
-
-        mockMvc.perform(post("/api/admins")
+    void adminCanCreateAdmin() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/admins")
+                        .session(adminSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Laura","telephone":"555","address":"HQ","bankAccount":"ABC","permissions":"ROLE_HR"}
+                                {"name":"Laura","username":"laura","password":"secret","telephone":"555","address":"HQ","bankAccount":"ABC","permissions":"ROLE_HR"}
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(2L))
-                .andExpect(jsonPath("$.permissions").value("ROLE_HR"));
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.username").value("laura"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.role").value("ADMIN"));
     }
 
     @Test
-    void shouldGetAdminById() throws Exception {
-        when(adminService.findById(1L)).thenReturn(java.util.Optional.of(buildAdmin(1L)));
-
-        mockMvc.perform(get("/api/admins/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Laura"));
+    void adminCanGetAdminById() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/admins/{id}", otherAdminId).session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.username").value("admin2"));
     }
 
     @Test
-    void shouldUpdateAdmin() throws Exception {
-        when(adminService.findById(1L)).thenReturn(java.util.Optional.of(buildAdmin(1L)));
-        when(adminService.save(any(Admin.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        mockMvc.perform(put("/api/admins/1")
+    void adminCanUpdateAdmin() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/admins/{id}", otherAdminId)
+                        .session(adminSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Laura 2","telephone":"555","address":"HQ","bankAccount":"ABC","permissions":"ROLE_ADMIN"}
+                                {"name":"Admin Two Updated","username":"admin2","password":"secret","telephone":"555","address":"HQ 2","bankAccount":"ABC2","permissions":"ROLE_ADMIN"}
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Laura 2"))
-                .andExpect(jsonPath("$.permissions").value("ROLE_ADMIN"));
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Admin Two Updated"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.permissions").value("ROLE_ADMIN"));
     }
 
     @Test
-    void shouldDeleteAdmin() throws Exception {
-        mockMvc.perform(delete("/api/admins/1"))
-                .andExpect(status().isNoContent());
-
-        verify(adminService).delete(1L);
+    void adminCanDeleteAdmin() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/admins/{id}", otherAdminId).session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
-    private Admin buildAdmin(Long id) {
-        Admin admin = new Admin();
-        admin.setId(id);
-        admin.setName("Laura");
-        admin.setTelephone("555");
-        admin.setAddress("HQ");
-        admin.setBankAccount("ABC");
-        admin.setPermissions("ROLE_HR");
-        return admin;
+    @Test
+    void employeeCannotAccessAdminEndpoints() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/admins").session(employeeSession))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
     }
 }

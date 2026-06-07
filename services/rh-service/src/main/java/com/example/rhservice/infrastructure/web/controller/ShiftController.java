@@ -7,9 +7,11 @@ import com.example.rhservice.infrastructure.web.dto.ShiftRequest;
 import com.example.rhservice.infrastructure.web.dto.ShiftResponse;
 import com.example.rhservice.infrastructure.web.dto.TimeBlockRequest;
 import com.example.rhservice.infrastructure.web.dto.TimeBlockResponse;
+import com.example.rhservice.infrastructure.web.security.CurrentUserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/shifts")
@@ -30,19 +33,23 @@ import java.util.List;
 public class ShiftController {
 
     private final ShiftService shiftService;
+    private final CurrentUserService currentUserService;
 
-    public ShiftController(ShiftService shiftService) {
+    public ShiftController(ShiftService shiftService, CurrentUserService currentUserService) {
         this.shiftService = shiftService;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping
-    public List<ShiftResponse> findAll() {
-        return shiftService.findAll().stream().map(this::toResponse).toList();
+    public List<ShiftResponse> findAll(Authentication authentication) {
+        return currentUserService.filterShifts(authentication, shiftService.findAll()).stream().map(this::toResponse).toList();
     }
 
     @GetMapping("/{id}")
-    public ShiftResponse findById(@PathVariable Long id) {
-        return toResponse(loadShift(id));
+    public ShiftResponse findById(@PathVariable Long id, Authentication authentication) {
+        Shift shift = loadShift(id);
+        currentUserService.requireShiftAccess(authentication, shift);
+        return toResponse(shift);
     }
 
     @PostMapping
@@ -87,7 +94,7 @@ public class ShiftController {
         }
         return requests.stream()
                 .map(request -> new TimeBlock(request.start(), request.end()))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private ShiftResponse toResponse(Shift shift) {

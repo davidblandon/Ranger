@@ -7,6 +7,8 @@ import jakarta.validation.constraints.PositiveOrZero;
 /** Request DTO for creating or updating an employee. */
 public record EmployeeRequest(
         @NotBlank String name,
+        @NotBlank String username,
+        @NotBlank String password,
         @NotBlank String telephone,
         @NotBlank String address,
         @NotBlank String bankAccount,

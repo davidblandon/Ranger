@@ -5,11 +5,15 @@ import com.example.rhservice.application.port.in.ShiftService;
 import com.example.rhservice.domain.model.Employee;
 import com.example.rhservice.domain.model.Payroll;
 import com.example.rhservice.domain.model.Shift;
+import com.example.rhservice.domain.model.UserRole;
 import com.example.rhservice.infrastructure.web.dto.EmployeeRequest;
 import com.example.rhservice.infrastructure.web.dto.EmployeeResponse;
+import com.example.rhservice.infrastructure.web.security.CurrentUserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,32 +35,40 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
     private final ShiftService shiftService;
+    private final PasswordEncoder passwordEncoder;
+    private final CurrentUserService currentUserService;
 
-    public EmployeeController(EmployeeService employeeService, ShiftService shiftService) {
+    public EmployeeController(EmployeeService employeeService, ShiftService shiftService, PasswordEncoder passwordEncoder, CurrentUserService currentUserService) {
         this.employeeService = employeeService;
         this.shiftService = shiftService;
+        this.passwordEncoder = passwordEncoder;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping
-    public List<EmployeeResponse> findAll() {
+    public List<EmployeeResponse> findAll(Authentication authentication) {
+        currentUserService.requireAdmin(authentication);
         return employeeService.findAll().stream().map(this::toResponse).toList();
     }
 
     @GetMapping("/{id}")
-    public EmployeeResponse findById(@PathVariable Long id) {
+    public EmployeeResponse findById(@PathVariable Long id, Authentication authentication) {
+        currentUserService.requireSelfOrAdmin(authentication, id);
         return toResponse(loadEmployee(id));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EmployeeResponse create(@Valid @RequestBody EmployeeRequest request) {
+    public EmployeeResponse create(@Valid @RequestBody EmployeeRequest request, Authentication authentication) {
+        currentUserService.requireAdmin(authentication);
         Employee employee = new Employee();
         applyRequest(employee, request, false);
         return toResponse(employeeService.save(employee));
     }
 
     @PutMapping("/{id}")
-    public EmployeeResponse update(@PathVariable Long id, @Valid @RequestBody EmployeeRequest request) {
+    public EmployeeResponse update(@PathVariable Long id, @Valid @RequestBody EmployeeRequest request, Authentication authentication) {
+        currentUserService.requireAdmin(authentication);
         Employee employee = loadEmployee(id);
         applyRequest(employee, request, true);
         return toResponse(employeeService.save(employee));
@@ -64,7 +76,8 @@ public class EmployeeController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id, Authentication authentication) {
+        currentUserService.requireAdmin(authentication);
         employeeService.delete(id);
     }
 
@@ -75,6 +88,9 @@ public class EmployeeController {
 
     private void applyRequest(Employee employee, EmployeeRequest request, boolean preservePayrolls) {
         employee.setName(request.name());
+        employee.setUsername(request.username());
+        employee.setPassword(passwordEncoder.encode(request.password()));
+        employee.setRole(UserRole.EMPLOYEE);
         employee.setTelephone(request.telephone());
         employee.setAddress(request.address());
         employee.setBankAccount(request.bankAccount());
@@ -101,6 +117,8 @@ public class EmployeeController {
         return new EmployeeResponse(
                 employee.getId(),
                 employee.getName(),
+            employee.getUsername(),
+            employee.getRole().name(),
                 employee.getTelephone(),
                 employee.getAddress(),
                 employee.getBankAccount(),

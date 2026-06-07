@@ -1,105 +1,113 @@
 package com.example.rhservice.infrastructure.web.controller;
 
-import com.example.rhservice.application.port.in.ShiftService;
-import com.example.rhservice.domain.model.Shift;
-import com.example.rhservice.domain.model.TimeBlock;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import java.time.LocalTime;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@WebMvcTest(ShiftController.class)
-class ShiftControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private ShiftService shiftService;
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+class ShiftControllerTest extends AbstractApiIntegrationTest {
 
     @Test
-    void shouldListShifts() throws Exception {
-        when(shiftService.findAll()).thenReturn(List.of(buildShift(1L)));
-
-        mockMvc.perform(get("/api/shifts"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1L));
+    void adminCanListShifts() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/shifts").session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.length()")
+                        .value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
     }
 
     @Test
-    void shouldCreateShift() throws Exception {
-        when(shiftService.save(any(Shift.class))).thenAnswer(invocation -> {
-            Shift shift = invocation.getArgument(0);
-            shift.setId(2L);
-            return shift;
-        });
-
-        mockMvc.perform(post("/api/shifts")
+    void adminCanCreateShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/shifts")
+                        .session(adminSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"monday":[{"start":"08:00:00","end":"12:00:00"}],"tuesday":[],"wednesday":[],"thursday":[],"friday":[],"saturday":[],"sunday":[]}
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(2L))
-                .andExpect(jsonPath("$.monday[0].start").value("08:00:00"));
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.monday[0].start").value("08:00:00"));
     }
 
     @Test
-    void shouldGetShiftById() throws Exception {
-        when(shiftService.findById(1L)).thenReturn(java.util.Optional.of(buildShift(1L)));
-
-        mockMvc.perform(get("/api/shifts/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L));
+    void adminCanGetShiftById() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/shifts/{id}", otherShiftId).session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(otherShiftId.intValue()));
     }
 
     @Test
-    void shouldUpdateShift() throws Exception {
-        when(shiftService.findById(1L)).thenReturn(java.util.Optional.of(buildShift(1L)));
-        when(shiftService.save(any(Shift.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        mockMvc.perform(put("/api/shifts/1")
+    void adminCanUpdateShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/shifts/{id}", otherShiftId)
+                        .session(adminSession)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"monday":[],"tuesday":[],"wednesday":[],"thursday":[],"friday":[],"saturday":[],"sunday":[]}
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L));
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(otherShiftId.intValue()));
     }
 
     @Test
-    void shouldDeleteShift() throws Exception {
-        mockMvc.perform(delete("/api/shifts/1"))
-                .andExpect(status().isNoContent());
-
-        verify(shiftService).delete(1L);
+    void adminCanDeleteShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/shifts/{id}", otherShiftId).session(adminSession))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
-    private Shift buildShift(Long id) {
-        Shift shift = new Shift();
-        shift.setId(id);
-        shift.setMonday(List.of(new TimeBlock(LocalTime.of(8, 0), LocalTime.of(12, 0))));
-        shift.setTuesday(List.of());
-        shift.setWednesday(List.of());
-        shift.setThursday(List.of());
-        shift.setFriday(List.of());
-        shift.setSaturday(List.of());
-        shift.setSunday(List.of());
-        return shift;
+    @Test
+    void employeeCanListOwnShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/shifts").session(employeeSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.length()")
+                        .value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    void employeeCanReadOwnShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/shifts/{id}", employeeShiftId).session(employeeSession))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(employeeShiftId.intValue()));
+    }
+
+    @Test
+    void employeeCannotReadAnotherShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/shifts/{id}", otherShiftId).session(employeeSession))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
+    }
+
+    @Test
+    void employeeCannotCreateShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/shifts")
+                        .session(employeeSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"monday":[{"start":"08:00:00","end":"12:00:00"}],"tuesday":[],"wednesday":[],"thursday":[],"friday":[],"saturday":[],"sunday":[]}
+                                """))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
+    }
+
+    @Test
+    void employeeCannotUpdateShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/shifts/{id}", otherShiftId)
+                        .session(employeeSession)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"monday":[],"tuesday":[],"wednesday":[],"thursday":[],"friday":[],"saturday":[],"sunday":[]}
+                                """))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
+    }
+
+    @Test
+    void employeeCannotDeleteShift() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/shifts/{id}", otherShiftId).session(employeeSession))
+                .andExpect(MockMvcResultMatchers.status().isForbidden())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Forbidden"));
     }
 }

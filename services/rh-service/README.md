@@ -12,7 +12,11 @@ This service now includes:
 - Output ports for persistence
 - Persistence adapters and Spring Data JPA repositories
 - REST controllers that expose JSON endpoints
+- Session-based login and logout
+- Startup seeding for one default admin and one default employee
 - DTOs for request and response payloads
+- Monthly payroll generation with overtime premium calculation
+- PDF paystub generation for payroll entries
 - OpenAPI / Swagger UI for API exploration
 - H2 for local development
 
@@ -76,6 +80,8 @@ How the data evolves:
 
 Base path: `http://localhost:8082/api`
 
+- `POST /auth/login`
+- `POST /auth/logout`
 - `GET /employees`
 - `GET /employees/{id}`
 - `POST /employees`
@@ -89,6 +95,8 @@ Base path: `http://localhost:8082/api`
 - `GET /payrolls`
 - `GET /payrolls/{id}`
 - `POST /payrolls`
+- `POST /payrolls/generate`
+- `GET /payrolls/{id}/paystub`
 - `PUT /payrolls/{id}`
 - `DELETE /payrolls/{id}`
 - `GET /shifts`
@@ -104,6 +112,8 @@ Base path: `http://localhost:8082/api`
 ```json
 {
     "name": "Ana Perez",
+    "username": "ana.perez",
+    "password": "secret123",
     "telephone": "555-111-222",
     "address": "Main Street 123",
     "bankAccount": "ES123456789",
@@ -118,12 +128,23 @@ Base path: `http://localhost:8082/api`
 ```json
 {
     "name": "Laura Gomez",
+    "username": "laura.gomez",
+    "password": "secret123",
     "telephone": "555-333-444",
     "address": "Admin Avenue 10",
     "bankAccount": "ES987654321",
     "permissions": "ROLE_HR_MANAGER"
 }
 ```
+
+### Default login accounts
+
+These users are created automatically every time the application starts because the project uses an in-memory H2 database.
+
+- Admin username: `admin`
+- Admin password: `supersecurepassword`
+- Employee username: `employee1`
+- Employee password: `supernormalpassword`
 
 ### Create a payroll record
 
@@ -136,6 +157,18 @@ Base path: `http://localhost:8082/api`
     "employeeId": 1
 }
 ```
+
+### Generate monthly payroll with overtime
+
+```json
+{
+    "employeeId": 1,
+    "month": "July",
+    "year": "2026"
+}
+```
+
+The system calculates the payroll amount from the employee's hourly salary, monthly target hours, weekly shift schedule, and overtime premium. If the employee works more hours than their monthly target, the extra hours are paid at a 10% overtime premium.
 
 ### Create a shift
 
@@ -157,11 +190,19 @@ Base path: `http://localhost:8082/api`
 ## How to Use the API
 
 1. Start the service.
-2. Create a shift if you want to assign one to an employee.
-3. Create an employee or admin using the JSON examples above.
-4. Use the `GET` endpoints to inspect the saved resources.
-5. Use `PUT` to update the same resource by id.
-6. Use `DELETE` to remove a resource by id.
+2. Log in with `POST /api/auth/login` using one of the default accounts above.
+3. Create a shift if you want to assign one to an employee.
+4. Create extra employees or admins using the JSON examples above.
+5. Use the `GET` endpoints to inspect the saved resources.
+6. Use `PUT` to update the same resource by id.
+7. Use `DELETE` to remove a resource by id.
+
+## Access Rules
+
+- Admins can manage employees, admins, payrolls, and shifts.
+- Employees can only read their own profile, their own payrolls, and their own shift.
+- There is no self-registration route; admins create users.
+- Login creates a session and logout clears it.
 
 ## Swagger / OpenAPI
 
@@ -209,6 +250,7 @@ The tests cover the REST API layer and verify the HTTP status codes and JSON res
 - Java 17
 - Maven Wrapper included in the project
 - H2 is configured for local development
+- The default admin and employee are seeded automatically on startup
 
 ### Windows JDK setup
 
@@ -233,6 +275,11 @@ From `services/rh-service/` on Windows:
 .\mvnw.cmd clean package -DskipTests
 .\mvnw.cmd spring-boot:run
 ```
+
+After startup, log in with `POST /api/auth/login` using one of the seeded accounts:
+
+- `admin` / `supersecurepassword`
+- `employee1` / `supernormalpassword`
 
 If your terminal still finds Java 8, run the two `JAVA_HOME` commands above before starting Maven.
 

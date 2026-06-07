@@ -4,6 +4,8 @@ package com.example.rhservice.infrastructure.web.dto;
 public record AdminResponse(
         Long id,
         String name,
+        String username,
+        String role,
         String telephone,
         String address,
         String bankAccount,

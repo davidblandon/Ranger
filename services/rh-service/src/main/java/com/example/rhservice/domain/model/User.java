@@ -1,9 +1,12 @@
 package com.example.rhservice.domain.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
@@ -17,7 +20,7 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = "password")
 @Entity
 @Table(name = "app_users")
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -40,6 +43,19 @@ public abstract class User {
 
     /** Full name for the user. Generated accessor: {@code getName()}/{@code setName(String)}. */
     private String name;
+
+    /** Unique login name used for authentication. */
+    @Column(nullable = false, unique = true)
+    private String username;
+
+    /** BCrypt password hash. */
+    @Column(nullable = false)
+    private String password;
+
+    /** Application role for authorization checks. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
 
     /** Contact telephone number. */
     private String telephone;
