@@ -1,6 +1,16 @@
 # Example Docker Compose file
-version: '3.8'
 services:
+  production-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: production
+      POSTGRES_USER: production
+      POSTGRES_PASSWORD: production
+    ports:
+      - "5432:5432"
+    volumes:
+      - production-db-data:/var/lib/postgresql/data
+
   rh-service:
     build: ../services/rh-service
     ports:
@@ -9,7 +19,18 @@ services:
     build: ../services/production-service
     ports:
       - "8082:8080"
+    depends_on:
+      - production-db
+    environment:
+      DB_HOST: production-db
+      DB_PORT: 5432
+      DB_NAME: production
+      DB_USER: production
+      DB_PASSWORD: production
   frontend:
     build: ../frontend
     ports:
       - "3000:3000"
+
+volumes:
+  production-db-data:

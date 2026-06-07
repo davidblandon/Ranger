@@ -1,12 +1,13 @@
 package com.example.productionservice.service.product;
 
-import com.example.productionservice.domain.product.Product;
+import com.example.productionservice.dto.product.ProductRequest;
+import com.example.productionservice.dto.product.ProductResponse;
 import java.util.List;
 
 public interface ProductService {
-    Product createProduct(Product product);
-    Product getProductById(int id);
-    List<Product> getAllProducts();
-    Product updateProduct(Product product);
-    void deleteProduct(int id);
+    ProductResponse createProduct(ProductRequest request);
+    ProductResponse getProductById(Long id);
+    List<ProductResponse> getAllProducts();
+    ProductResponse updateProduct(Long id, ProductRequest request);
+    void deleteProduct(Long id);
 }

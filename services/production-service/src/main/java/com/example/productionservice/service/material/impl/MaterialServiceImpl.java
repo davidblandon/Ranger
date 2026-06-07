@@ -1,46 +1,86 @@
 package com.example.productionservice.service.material.impl;
 
 import com.example.productionservice.domain.material.Material;
+import com.example.productionservice.domain.partner.Partner;
+import com.example.productionservice.dto.material.MaterialRequest;
+import com.example.productionservice.dto.material.MaterialResponse;
+import com.example.productionservice.exception.NotFoundException;
+import com.example.productionservice.mapper.material.MaterialMapper;
+import com.example.productionservice.repository.material.MaterialRepository;
+import com.example.productionservice.repository.partner.PartnerRepository;
 import com.example.productionservice.service.material.MaterialService;
-import java.util.ArrayList;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
-import java.util.Optional;
 
+@Service
+@Transactional
 public class MaterialServiceImpl implements MaterialService {
-    private final List<Material> materials = new ArrayList<>();
 
-    @Override
-    public Material createMaterial(Material material) {
-        materials.add(material);
-        return material;
+    private final MaterialRepository materialRepository;
+    private final PartnerRepository partnerRepository;
+    private final MaterialMapper materialMapper;
+
+    public MaterialServiceImpl(MaterialRepository materialRepository,
+                               PartnerRepository partnerRepository,
+                               MaterialMapper materialMapper) {
+        this.materialRepository = materialRepository;
+        this.partnerRepository = partnerRepository;
+        this.materialMapper = materialMapper;
     }
 
     @Override
-    public Material getMaterialById(int id) {
-        Optional<Material> material = materials.stream()
-            .filter(m -> m.getId() == id)
-            .findFirst();
-        return material.orElse(null);
+    public MaterialResponse createMaterial(MaterialRequest request) {
+        Material material = new Material();
+        apply(material, request);
+        return materialMapper.toResponse(materialRepository.save(material));
     }
 
     @Override
-    public List<Material> getAllMaterials() {
-        return new ArrayList<>(materials);
+    @Transactional(readOnly = true)
+    public MaterialResponse getMaterialById(Long id) {
+        return materialMapper.toResponse(findOrThrow(id));
     }
 
     @Override
-    public Material updateMaterial(Material material) {
-        for (int i = 0; i < materials.size(); i++) {
-            if (materials.get(i).getId() == material.getId()) {
-                materials.set(i, material);
-                return material;
-            }
+    @Transactional(readOnly = true)
+    public List<MaterialResponse> getAllMaterials() {
+        return materialRepository.findAll().stream()
+            .map(materialMapper::toResponse)
+            .toList();
+    }
+
+    @Override
+    public MaterialResponse updateMaterial(Long id, MaterialRequest request) {
+        Material material = findOrThrow(id);
+        apply(material, request);
+        return materialMapper.toResponse(materialRepository.save(material));
+    }
+
+    @Override
+    public void deleteMaterial(Long id) {
+        materialRepository.delete(findOrThrow(id));
+    }
+
+    private void apply(Material material, MaterialRequest request) {
+        material.setName(request.name());
+        material.setType(request.type());
+        material.setCost(request.cost());
+        material.setStock(request.stock());
+        material.setPartner(resolvePartner(request.partnerId()));
+    }
+
+    private Partner resolvePartner(Long partnerId) {
+        if (partnerId == null) {
+            return null;
         }
-        return null;
+        return partnerRepository.findById(partnerId)
+            .orElseThrow(() -> new NotFoundException("Partner not found: " + partnerId));
     }
 
-    @Override
-    public void deleteMaterial(int id) {
-        materials.removeIf(m -> m.getId() == id);
+    private Material findOrThrow(Long id) {
+        return materialRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Material not found: " + id));
     }
 }

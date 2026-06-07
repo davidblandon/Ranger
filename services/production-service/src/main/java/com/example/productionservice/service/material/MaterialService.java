@@ -1,12 +1,13 @@
 package com.example.productionservice.service.material;
 
-import com.example.productionservice.domain.material.Material;
+import com.example.productionservice.dto.material.MaterialRequest;
+import com.example.productionservice.dto.material.MaterialResponse;
 import java.util.List;
 
 public interface MaterialService {
-    Material createMaterial(Material material);
-    Material getMaterialById(int id);
-    List<Material> getAllMaterials();
-    Material updateMaterial(Material material);
-    void deleteMaterial(int id);
+    MaterialResponse createMaterial(MaterialRequest request);
+    MaterialResponse getMaterialById(Long id);
+    List<MaterialResponse> getAllMaterials();
+    MaterialResponse updateMaterial(Long id, MaterialRequest request);
+    void deleteMaterial(Long id);
 }

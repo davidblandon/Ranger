@@ -1,12 +1,7 @@
 package com.example.productionservice.repository.batch;
 
 import com.example.productionservice.domain.batch.Batch;
-import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface BatchRepository {
-    Batch save(Batch batch);
-    Batch findById(int id);
-    List<Batch> findAll();
-    Batch update(Batch batch);
-    void deleteById(int id);
+public interface BatchRepository extends JpaRepository<Batch, Long> {
 }

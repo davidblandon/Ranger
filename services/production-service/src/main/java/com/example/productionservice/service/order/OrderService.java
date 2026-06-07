@@ -1,12 +1,13 @@
 package com.example.productionservice.service.order;
 
-import com.example.productionservice.domain.order.Order;
+import com.example.productionservice.dto.order.OrderRequest;
+import com.example.productionservice.dto.order.OrderResponse;
 import java.util.List;
 
 public interface OrderService {
-    Order createOrder(Order order);
-    Order getOrderById(int id);
-    List<Order> getAllOrders();
-    Order updateOrder(Order order);
-    void deleteOrder(int id);
+    OrderResponse createOrder(OrderRequest request);
+    OrderResponse getOrderById(Long id);
+    List<OrderResponse> getAllOrders();
+    OrderResponse updateOrder(Long id, OrderRequest request);
+    void deleteOrder(Long id);
 }

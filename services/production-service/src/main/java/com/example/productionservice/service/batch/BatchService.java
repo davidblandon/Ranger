@@ -1,12 +1,13 @@
 package com.example.productionservice.service.batch;
 
-import com.example.productionservice.domain.batch.Batch;
+import com.example.productionservice.dto.batch.BatchRequest;
+import com.example.productionservice.dto.batch.BatchResponse;
 import java.util.List;
 
 public interface BatchService {
-    Batch createBatch(Batch batch);
-    Batch getBatchById(int id);
-    List<Batch> getAllBatches();
-    Batch updateBatch(Batch batch);
-    void deleteBatch(int id);
+    BatchResponse createBatch(BatchRequest request);
+    BatchResponse getBatchById(Long id);
+    List<BatchResponse> getAllBatches();
+    BatchResponse updateBatch(Long id, BatchRequest request);
+    void deleteBatch(Long id);
 }

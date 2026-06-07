@@ -1,12 +1,9 @@
 package com.example.productionservice.repository.product;
 
 import com.example.productionservice.domain.product.Product;
-import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ProductRepository {
-    Product save(Product product);
-    Product findById(int id);
-    List<Product> findAll();
-    Product update(Product product);
-    void deleteById(int id);
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    long countByStockLessThanEqual(int threshold);
 }
